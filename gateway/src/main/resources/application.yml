@@ -1,14 +1,29 @@
 server:
-  port: 8080
+  port: 8080  # Gateway Service runs on port 8080
 
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
       discovery:
         locator:
           enabled: true
+          lower-case-service-id: true  # Ensures service names are lowercase in Eureka
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
       httpclient:
-        connect-timeout: 60000
-        response-timeout: 60s
+        connect-timeout: 60000  # 60 seconds connection timeout
+        response-timeout: 60s  # 60 seconds response timeout

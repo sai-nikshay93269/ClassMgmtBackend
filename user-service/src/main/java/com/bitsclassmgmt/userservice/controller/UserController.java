@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.bitsclassmgmt.userservice.dto.AuthUserDto;
+import com.bitsclassmgmt.userservice.dto.UserDetailsDto;
 import com.bitsclassmgmt.userservice.dto.UserDto;
 import com.bitsclassmgmt.userservice.request.RegisterRequest;
 import com.bitsclassmgmt.userservice.request.UserUpdateRequest;
@@ -48,6 +49,11 @@ public class UserController {
     @GetMapping("/getUserByUsername/{username}")
     public ResponseEntity<AuthUserDto> getUserByUsername(@PathVariable String username) {
         return ResponseEntity.ok(modelMapper.map(userService.getUserByUsername(username), AuthUserDto.class));
+    }
+    
+    @GetMapping("/getUserDetailsByUsername/{username}")
+    public ResponseEntity<UserDetailsDto> getUserDetailsByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(modelMapper.map(userService.getUserDetailsByUsername(username), UserDetailsDto.class));
     }
 
     @PutMapping("/update")

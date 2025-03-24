@@ -27,14 +27,24 @@ public class UserService {
     private final ModelMapper modelMapper;
 
     public User saveUser(RegisterRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username '" + request.getUsername() + "' is already taken.");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email '" + request.getEmail() + "' is already in use.");
+        }
+
         User toSave = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
                 .role(Role.STUDENT)
-                .active(Active.ACTIVE).build();
+                .active(Active.ACTIVE)
+                .build();
+
         return userRepository.save(toSave);
     }
+
 
     public List<User> getAll() {
         return userRepository.findAllByActive(Active.ACTIVE);
@@ -52,6 +62,10 @@ public class UserService {
         return findUserByUsername(username);
     }
 
+    public User getUserDetailsByUsername(String username) {
+        return findUserByUsername(username);
+    }
+    
     public User updateUserById(UserUpdateRequest request, MultipartFile file) {
         User toUpdate = findUserById(request.getId());
 

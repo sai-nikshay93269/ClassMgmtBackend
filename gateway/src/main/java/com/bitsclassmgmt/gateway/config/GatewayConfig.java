@@ -26,7 +26,7 @@ public class GatewayConfig {
                         .filters(f -> f.filter(filter))
                         .uri("lb://job-service"))
 
-                .route("notification-service", r -> r.path("/v1/notification/**")
+                .route("notification-se rvice", r -> r.path("/v1/notification/**")
                         .filters(f -> f.filter(filter))
                         .uri("lb://notification-service"))
 
