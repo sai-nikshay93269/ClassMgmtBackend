@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.bitsclassmgmt.chatservice.dto.GroupsDto;
 
-@FeignClient(name = "classes-service", path = "/v1/job-service/groups")
+@FeignClient(name = "groups-service", path = "/v1/job-service/groups")
 public interface GroupsServiceClient {
     @GetMapping("/{id}")
     ResponseEntity<GroupsDto> getGroupsById(@PathVariable String id);

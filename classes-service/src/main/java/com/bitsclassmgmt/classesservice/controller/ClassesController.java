@@ -1,6 +1,7 @@
 package com.bitsclassmgmt.classesservice.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -30,6 +31,10 @@ import com.bitsclassmgmt.classesservice.request.classes.ClassesUpdateRequest;
 import com.bitsclassmgmt.classesservice.service.ClassMembersService;
 import com.bitsclassmgmt.classesservice.service.ClassesService;
 import com.bitsclassmgmt.classesservice.service.GroupsService;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Validator;
+
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,8 +46,9 @@ public class ClassesController {
     private final ClassMembersService classMembersService;
     private final GroupsService groupsService;
     private final ModelMapper modelMapper;
+    private final Validator validator;
 
-    @PostMapping("/")
+    @PostMapping("")
     public ResponseEntity<ClassesDto> createClasses(@Valid @RequestBody  ClassesCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(modelMapper.map(classesService.createClasses(request), ClassesDto.class));
@@ -50,41 +56,40 @@ public class ClassesController {
 
     @GetMapping("/getAll")
     public ResponseEntity<List<ClassesDto>> getAllClasses() {
-        return ResponseEntity.ok(classesService.getAll().stream()
-                .map(advert -> modelMapper.map(advert, ClassesDto.class)).toList());
+        return ResponseEntity.ok(classesService.getAll());
     }
-
+    
     @GetMapping("/{id}")
     public ResponseEntity<ClassesDto> getClassesById(@PathVariable String id) {
         return ResponseEntity.ok(modelMapper.map(classesService.getClassById(id), ClassesDto.class));
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasRole('ADMIN') or @advertService.authorizeCheck(#request.id, principal)")
+    @PreAuthorize("hasRole('ADMIN') or @classesService.authorizeCheck(#request.id, principal)")
     public ResponseEntity<ClassesDto> updateClassesById(@Valid @RequestPart ClassesUpdateRequest request) {
         return ResponseEntity.ok(modelMapper.map(classesService.updateClassById(request), ClassesDto.class));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @advertService.authorizeCheck(#id, principal)")
+    @PreAuthorize("hasRole('ADMIN') or @classesService.authorizeCheck(#id, principal)")
     public ResponseEntity<Void> deleteClassesById(@PathVariable String id) {
         classesService.deleteClassById(id);
         return ResponseEntity.ok().build();
     }
     
     @PostMapping("/{id}/members")
-    public ResponseEntity<ClassMembersDto> createClassMembers(@PathVariable("id") String classId, 
-            @Valid @RequestBody ClassMembersCreateRequest request) {
-    	request.setClassId(classId);
-    	 // Call service to create class member
-        ClassMembers classMember = classMembersService.createClassMembers(request);
+    public ResponseEntity<List<ClassMembersDto>> createClassMembers(
+            @PathVariable("id") String classId,
+            @RequestBody ClassMembersCreateRequest request) {
+    	 request.setClassId(classId);
 
-        // Convert entity to DTO
-        ClassMembersDto responseDto = modelMapper.map(classMember, ClassMembersDto.class);
-        responseDto.setClassId(classMember.getClassEntity().getId());
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+         // Manually validate after setting classId
+         BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(request, "classMembersCreateRequest");
+         validator.validate(request, bindingResult);
+        List<ClassMembersDto> savedMembers = classMembersService.createClassMembersBatch(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedMembers);
     }
+
     
     @GetMapping("/{id}/members")
     public ResponseEntity<List<ClassMembersDto>> getClassMembersByClass(@PathVariable("id") String classId) {

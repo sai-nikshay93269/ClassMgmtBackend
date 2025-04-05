@@ -69,4 +69,11 @@ public class UserController {
         userService.deleteUserById(id);
         return ResponseEntity.ok().build();
     }
+    
+    @GetMapping("/getAllStudents") //@PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<List<UserDto>> getAllStudents() { 
+    	return ResponseEntity.ok(userService.getAllStudents().stream() 
+    			.map(user -> modelMapper.map(user, UserDto.class)).toList()); 
+    }
+    
 }

@@ -1,6 +1,7 @@
 package com.bitsclassmgmt.classesservice.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
@@ -23,6 +24,7 @@ import com.bitsclassmgmt.classesservice.dto.ClassMembersDto;
 import com.bitsclassmgmt.classesservice.dto.ClassesDto;
 import com.bitsclassmgmt.classesservice.dto.GroupMembersDto;
 import com.bitsclassmgmt.classesservice.dto.GroupsDto;
+import com.bitsclassmgmt.classesservice.mapper.GroupsMapper;
 import com.bitsclassmgmt.classesservice.model.ClassMembers;
 import com.bitsclassmgmt.classesservice.model.GroupMembers;
 import com.bitsclassmgmt.classesservice.request.classes.ClassMembersCreateRequest;
@@ -34,6 +36,10 @@ import com.bitsclassmgmt.classesservice.service.ClassMembersService;
 import com.bitsclassmgmt.classesservice.service.ClassesService;
 import com.bitsclassmgmt.classesservice.service.GroupMembersService;
 import com.bitsclassmgmt.classesservice.service.GroupsService;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Validator;
+
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,8 +51,9 @@ public class GroupsController {
     private final ClassMembersService classMembersService;
     private final GroupMembersService groupMembersService;
     private final ModelMapper modelMapper;
+    private final Validator validator;
 
-    @PostMapping("/")
+    @PostMapping("")
     public ResponseEntity<GroupsDto> createGroups(@Valid @RequestBody  GroupsCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(modelMapper.map(groupsService.createGroups(request), GroupsDto.class));
@@ -54,8 +61,11 @@ public class GroupsController {
 
     @GetMapping("/getAll")
     public ResponseEntity<List<GroupsDto>> getAllGroups() {
-        return ResponseEntity.ok(groupsService.getAll().stream()
-                .map(group -> modelMapper.map(group, GroupsDto.class)).toList());
+        return ResponseEntity.ok(
+            groupsService.getAll().stream()
+                .map(GroupsMapper::toDto)  // Use custom mapper
+                .collect(Collectors.toList())
+        );
     }
 
     @GetMapping("/{id}")
@@ -77,20 +87,21 @@ public class GroupsController {
     }
     
     @PostMapping("/{id}/members")
-    public ResponseEntity<GroupMembersDto> createGroupMembers(@PathVariable("id") String groupId, 
-            @Valid @RequestBody GroupMembersCreateRequest request) {
-    	request.setGroupId(groupId);
-    	 // Call service to create class member
-        GroupMembers groupMember = groupMembersService.createGroupMembers(request);
+    public ResponseEntity<List<GroupMembersDto>> createGroupMembers(
+            @PathVariable("id") String groupId,
+            @RequestBody GroupMembersCreateRequest request) {
 
-        // Convert entity to DTO
-        GroupMembersDto responseDto = modelMapper.map(groupMember, GroupMembersDto.class);
-        responseDto.setGroupId(groupMember.getGroupEntity().getId());
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+        request.setGroupId(groupId);
+
+        // Manual validation
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(request, "groupMembersCreateRequest");
+        validator.validate(request, bindingResult);
+
+        List<GroupMembersDto> savedMembers = groupMembersService.createGroupMembersBatch(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedMembers);
     }
     
-    @PostMapping("/{id}/members")
+    @GetMapping("/{id}/members")
     public ResponseEntity<List<GroupMembersDto>> getGroupMembersByGroup(@PathVariable("id") String groupId) {
         // Fetch group members from service
         List<GroupMembersDto> responseDtoList = groupMembersService.getMembersByGroup(groupId);

@@ -22,10 +22,12 @@ public class GatewayConfig {
                         .filters(f -> f.filter(filter))
                         .uri("lb://user-service"))
 
-                .route("job-service", r -> r.path("/v1/job-service/**")
+                .route("job-service", r -> r.path("/v1/classes-service/**")
                         .filters(f -> f.filter(filter))
-                        .uri("lb://job-service"))
-
+                        .uri("lb://classes-service"))
+                .route("job-service", r -> r.path("/v1/chat-service/**")
+                        .filters(f -> f.filter(filter))
+                        .uri("lb://chat-service"))
                 .route("notification-se rvice", r -> r.path("/v1/notification/**")
                         .filters(f -> f.filter(filter))
                         .uri("lb://notification-service"))

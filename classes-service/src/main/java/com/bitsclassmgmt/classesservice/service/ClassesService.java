@@ -8,8 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.bitsclassmgmt.classesservice.client.UserServiceClient;
+import com.bitsclassmgmt.classesservice.dto.ClassesDto;
 import com.bitsclassmgmt.classesservice.dto.UserDto;
 import com.bitsclassmgmt.classesservice.exc.NotFoundException;
+import com.bitsclassmgmt.classesservice.mapper.ClassesMapper;
 import com.bitsclassmgmt.classesservice.model.Classes;
 import com.bitsclassmgmt.classesservice.repository.ClassesRepository;
 import com.bitsclassmgmt.classesservice.request.classes.ClassesCreateRequest;
@@ -27,17 +29,23 @@ public class ClassesService {
     public Classes createClasses(ClassesCreateRequest request) {
         String userId = getUserById(request.getTeacherId()).getId();
 
+        // ✅ Check if a class with the same name already exists
+        if (classesRepository.existsByName(request.getName())) {
+            throw new RuntimeException("Class with name '" + request.getName() + "' already exists.");
+        }
 
         Classes toSave = Classes.builder()
                 .teacherId(userId)
                 .name(request.getName())
                 .description(request.getDescription())
                 .build();
+
         return classesRepository.save(toSave);
     }
 
-    public List<Classes> getAll() {
-        return classesRepository.findAll();
+    public List<ClassesDto> getAll() {
+        List<Classes> classesList = classesRepository.findAll();
+        return ClassesMapper.toDtoList(classesList);
     }
 
     public Classes getClassById(String id) {

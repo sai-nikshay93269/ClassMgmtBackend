@@ -3,6 +3,7 @@ package com.bitsclassmgmt.userservice.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.bitsclassmgmt.userservice.enums.Active;
+import com.bitsclassmgmt.userservice.enums.Role;
 import com.bitsclassmgmt.userservice.model.User;
 
 import java.util.List;
@@ -18,5 +19,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean existsByEmail(String email);
     
     List<User> findAllByActive(Active active);
+    List<User> findAllByRoleAndActive(Role role, Active active);
 
 }

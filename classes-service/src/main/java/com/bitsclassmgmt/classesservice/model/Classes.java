@@ -1,12 +1,12 @@
 package com.bitsclassmgmt.classesservice.model;
 
-import javax.persistence.Entity;
+import java.util.List;
+import java.util.Set;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import javax.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import lombok.*;
 
 @Entity(name = "classes")
 @Builder
@@ -15,8 +15,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Classes extends BaseEntity {
+
     private String teacherId;
+
+    @Column(unique = true, nullable = false)
     private String name;
+
     private String description;
 
+    @OneToMany(mappedBy = "classEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private Set<ClassMembers> members;
 }

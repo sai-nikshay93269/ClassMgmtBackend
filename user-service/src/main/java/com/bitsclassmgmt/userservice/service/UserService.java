@@ -111,4 +111,8 @@ public class UserService {
 
         return toUpdate;
     }
+    public List<User> getAllStudents() { 
+    	return userRepository.findAllByRoleAndActive(Role.STUDENT, Active.ACTIVE); 
+    	}
+    
 }

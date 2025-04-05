@@ -29,8 +29,6 @@ import com.bitsclassmgmt.chatservice.request.chat.ChatCreateRequest;
 import com.bitsclassmgmt.chatservice.request.chat.SubProjectCreateRequest;
 import com.bitsclassmgmt.chatservice.request.chat.TaskCreateRequest;
 import com.bitsclassmgmt.chatservice.service.ChatService;
-import com.bitsclassmgmt.chatservice.service.SubProjectService;
-import com.bitsclassmgmt.chatservice.service.TaskService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,8 +37,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ChatController {
     private final ChatService chatService;
-    private final TaskService taskService;
-    private final SubProjectService subProjectService;
     private final ModelMapper modelMapper;
 
     @PostMapping("/")
@@ -50,7 +46,7 @@ public class ChatController {
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<ChatDto>> getAllprojects() {
+    public ResponseEntity<List<ChatDto>> getAllChats() {
         return ResponseEntity.ok(chatService.getAll().stream()
                 .map(advert -> modelMapper.map(advert, ChatDto.class)).toList());
     }

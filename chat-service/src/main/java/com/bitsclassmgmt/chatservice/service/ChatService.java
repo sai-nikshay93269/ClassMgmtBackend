@@ -1,5 +1,6 @@
 package com.bitsclassmgmt.chatservice.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,16 +32,15 @@ public class ChatService {
     private final ModelMapper modelMapper;
 
     public Chat createChat(ChatCreateRequest request) {
-        // Validate class/group existence if provided
+        // Validate class existence if provided
         if (request.getClassId() != null) {
             getClassById(request.getClassId());
         }
-        
-     // Validate class/group existence if provided
+
+        // Validate group existence if provided
         if (request.getGroupId() != null) {
             getGroupById(request.getGroupId());
         }
-
 
         // Validate receiver if it's a private message
         if (request.getReceiverId() != null) {
@@ -49,16 +49,27 @@ public class ChatService {
 
         // Create and save the chat message
         Chat chat = Chat.builder()
-                .classId(request.getClassId())  // Nullable for private messages
-                .groupId(request.getGroupId())  // Nullable if not a group chat
+                .classId(request.getClassId()) // Nullable for private messages
+                .groupId(request.getGroupId()) // Nullable if not a group chat
                 .senderId(request.getSenderId())
                 .receiverId(request.getReceiverId()) // Nullable for group messages
                 .message(request.getMessage())
-                .hasAttachment(false)
+                .hasAttachment(request.getHasAttachment() != null ? request.getHasAttachment() : false)
+                .timestamp(request.getTimestamp() != null ? request.getTimestamp() : LocalDateTime.now()) // Ensure timestamp is set
+
+                // New properties from ChatCreateRequest
+                .type(request.getType())
+                .subtype(request.getSubtype())
+                .img(request.getImg())
+                .preview(request.getPreview())
+                .reply(request.getReply())
+                .fileUrl(request.getFileUrl())
+                .dividerText(request.getDividerText())
                 .build();
 
         return chatRepository.save(chat);
     }
+
 
     public List<Chat> getAll() {
         return chatRepository.findAll();
@@ -97,9 +108,6 @@ public class ChatService {
     	chatRepository.deleteById(id);
     }
 
-	public boolean authorizeCheck(String id, String principal) {
-        return getUserById(getAdvertById(id).getUserId()).getUsername().equals(principal);
-    }
 
     protected Chat findAdvertById(String id) {
         return chatRepository.findById(id)

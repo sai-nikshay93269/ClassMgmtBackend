@@ -12,6 +12,7 @@ import com.bitsclassmgmt.classesservice.client.UserServiceClient;
 import com.bitsclassmgmt.classesservice.dto.GroupsDto;
 import com.bitsclassmgmt.classesservice.dto.UserDto;
 import com.bitsclassmgmt.classesservice.exc.NotFoundException;
+import com.bitsclassmgmt.classesservice.mapper.GroupsMapper;
 import com.bitsclassmgmt.classesservice.model.Classes;
 import com.bitsclassmgmt.classesservice.model.Groups;
 import com.bitsclassmgmt.classesservice.repository.ClassesRepository;
@@ -31,15 +32,23 @@ public class GroupsService {
     private final ModelMapper modelMapper;
 
     public Groups createGroups(GroupsCreateRequest request) {
-    	Classes classEntity = classesRepository.findById(request.getClassId())
+        Classes classEntity = classesRepository.findById(request.getClassId())
                 .orElseThrow(() -> new RuntimeException("Class not found with ID: " + request.getClassId()));
+
+        // ✅ Check if group with same name exists for the class
+        boolean groupExists = groupsRepository.existsByNameAndClassEntity_Id(request.getName(), request.getClassId());
+        if (groupExists) {
+            throw new RuntimeException("Group with name '" + request.getName() + "' already exists in this class.");
+        }
 
         Groups toSave = Groups.builder()
                 .name(request.getName())
                 .classEntity(classEntity)
                 .build();
+
         return groupsRepository.save(toSave);
     }
+
 
     public List<Groups> getAll() {
         return groupsRepository.findAll();
@@ -75,16 +84,10 @@ public class GroupsService {
     }
     
     public List<GroupsDto> getGroupsByClassId(String classId) {
-        // Fetch groups from repository
         List<Groups> groups = groupsRepository.findByClassEntityId(classId);
-
-        // Convert entities to DTOs
         return groups.stream()
-                .map(group -> {
-                    GroupsDto dto = modelMapper.map(group, GroupsDto.class);
-                    dto.setClassId(group.getClassEntity().getId());
-                    return dto;
-                })
+                .map(GroupsMapper::toDto)  // Use custom mapper
                 .collect(Collectors.toList());
     }
+
 }

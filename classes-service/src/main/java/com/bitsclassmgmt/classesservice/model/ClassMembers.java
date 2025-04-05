@@ -1,15 +1,9 @@
 package com.bitsclassmgmt.classesservice.model;
 
-import javax.persistence.Entity;
-import javax.persistence.ForeignKey;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import lombok.*;
 
 @Entity(name = "classMembers")
 @Builder
@@ -18,9 +12,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ClassMembers extends BaseEntity {
-	@ManyToOne
-    @JoinColumn(name = "class_id", nullable = false, foreignKey = @ForeignKey(name = "fk_class_member_class"))
-    private Classes classEntity;  // References Classes table
 
-    private String studentId;  // This will store user_id from Auth Service
+    @ManyToOne
+    @JoinColumn(name = "class_id", nullable = false, foreignKey = @ForeignKey(name = "fk_class_member_class"))
+    @JsonBackReference
+    private Classes classEntity;
+
+    private String studentId;  // user_id from Auth Service
 }

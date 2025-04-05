@@ -27,4 +27,15 @@ public class Chat extends BaseEntity {
     @Column(nullable = false)
     private Boolean hasAttachment = false;
 
+    @CreationTimestamp
+    private LocalDateTime timestamp; // Auto-generated timestamp
+
+    // New properties to support different message types
+    private String type; // "msg", "divider"
+    private String subtype; // "img", "doc", "link", "reply"
+    private String img; // URL for image messages
+    private String preview; // Preview image for links
+    private String reply; // Message text for replies
+    private String fileUrl; // URL for file attachments
+    private String dividerText; // Text for divider messages
 }
