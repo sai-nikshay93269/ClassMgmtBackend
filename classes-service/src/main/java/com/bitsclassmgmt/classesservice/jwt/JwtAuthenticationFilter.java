@@ -28,10 +28,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
-            String token = request.getHeader("Authorization");
+            String token = extractToken(request);
 
-            if (StringUtils.hasText(token) && token.startsWith("Bearer ")) {
-                Claims claims = jwtUtil.getClaims(token.substring(7));
+            if (StringUtils.hasText(token)) {
+                Claims claims = jwtUtil.getClaims(token);
 
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority(claims.getIssuer());
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -42,8 +42,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("JWT auth error: " + e.getMessage());
         }
+
         filterChain.doFilter(request, response);
     }
+
+    private String extractToken(HttpServletRequest request) {
+        // 1. Check Authorization header
+        String headerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(headerToken) && headerToken.startsWith("Bearer ")) {
+            return headerToken.substring(7);
+        }
+
+        // 2. Check query param only for /v1/chat-service/chat/** paths
+        String path = request.getRequestURI();
+        if (path.startsWith("/v1/chat-service/chat/")) {
+            String queryToken = request.getParameter("token");
+            if (StringUtils.hasText(queryToken)) {
+                return queryToken;
+            }
+        }
+
+        return null;
+    }
+
 }
