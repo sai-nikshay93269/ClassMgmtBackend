@@ -103,8 +103,28 @@
 
 <dependency>
     <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-amqp</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-websocket</artifactId>
 </dependency>
+
+
+<!-- Reactive networking (useful for STOMP broker relay) -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-reactor-netty</artifactId>
+</dependency>
+
+<!-- Actuator for health, metrics, etc. -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
+
+
     </dependencies>
     <dependencyManagement>
         <dependencies>

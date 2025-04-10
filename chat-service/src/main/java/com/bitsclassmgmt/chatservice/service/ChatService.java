@@ -1,15 +1,21 @@
 package com.bitsclassmgmt.chatservice.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.bitsclassmgmt.chatservice.client.ClassesServiceClient;
-import com.bitsclassmgmt.chatservice.client.GroupsServiceClient;
+import com.bitsclassmgmt.chatservice.client.ClassGroupServiceClient;
 import com.bitsclassmgmt.chatservice.client.UserServiceClient;
 import com.bitsclassmgmt.chatservice.dto.ClassesDto;
 import com.bitsclassmgmt.chatservice.dto.GroupsDto;
@@ -18,7 +24,10 @@ import com.bitsclassmgmt.chatservice.exc.NotFoundException;
 import com.bitsclassmgmt.chatservice.model.Chat;
 import com.bitsclassmgmt.chatservice.repository.ChatRepository;
 import com.bitsclassmgmt.chatservice.request.chat.ChatCreateRequest;
+import com.bitsclassmgmt.chatservice.request.chat.ChatFilterRequest;
 import com.bitsclassmgmt.chatservice.request.chat.ClassesUpdateRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,9 +36,12 @@ import lombok.RequiredArgsConstructor;
 public class ChatService {
 	private final ChatRepository chatRepository;
     private final UserServiceClient userServiceClient;
-    private final ClassesServiceClient classesServiceClient;
-    private final GroupsServiceClient groupsServiceClient;
+    private final ClassGroupServiceClient classGroupServiceClient;
     private final ModelMapper modelMapper;
+    private final RabbitTemplate rabbitTemplate;
+    private final TopicExchange chatExchange;
+    private final RabbitAdmin rabbitAdmin;
+    private final ObjectMapper objectMapper;
 
     public Chat createChat(ChatCreateRequest request) {
         // Validate class existence if provided
@@ -66,8 +78,62 @@ public class ChatService {
                 .fileUrl(request.getFileUrl())
                 .dividerText(request.getDividerText())
                 .build();
+        
+        Chat savedChat = chatRepository.save(chat);
 
-        return chatRepository.save(chat);
+        // 🐇 Build payload and send to RabbitMQ
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("id", savedChat.getId());
+            payload.put("room", getRoomKey(savedChat));
+            payload.put("senderId", savedChat.getSenderId());
+            payload.put("message", savedChat.getMessage());
+            payload.put("timestamp", savedChat.getTimestamp());
+            payload.put("hasAttachment", savedChat.getHasAttachment());
+            payload.put("type", savedChat.getType());
+            payload.put("subtype", savedChat.getSubtype());
+            payload.put("img", savedChat.getImg());
+            payload.put("preview", savedChat.getPreview());
+            payload.put("reply", savedChat.getReply());
+            payload.put("fileUrl", savedChat.getFileUrl());
+
+            String routingKey = getRoutingKey(savedChat);
+            String json = objectMapper.writeValueAsString(payload);
+
+            rabbitTemplate.convertAndSend(chatExchange.getName(), routingKey, payload); // ✅ send Map directly
+
+
+            System.out.println("📤 Published to RabbitMQ [" + routingKey + "]: " + json);
+
+        } catch (JsonProcessingException e) {
+            System.err.println("❌ Failed to publish to RabbitMQ: " + e.getMessage());
+        }
+
+        
+        return savedChat;
+    }
+    private String getRoomKey(Chat chat) {
+        if (chat.getGroupId() != null) {
+            return "group-" + chat.getGroupId();
+        } else if (chat.getClassId() != null) {
+            return "class-" + chat.getClassId();
+        } else if (chat.getReceiverId() != null) {
+            return "user-" + chat.getReceiverId();
+        } else {
+            return "general";
+        }
+    }
+
+    private String getRoutingKey(Chat chat) {
+        if (chat.getGroupId() != null) {
+            return "group-" + chat.getGroupId() + ".message";
+        } else if (chat.getClassId() != null) {
+            return "class-" + chat.getClassId() + ".message";
+        } else if (chat.getReceiverId() != null) {
+            return "user-" + chat.getReceiverId() + ".message";
+        } else {
+            return "general.message";
+        }
     }
 
 
@@ -87,12 +153,12 @@ public class ChatService {
     }
     
     public ClassesDto getClassById(String id) {
-        return Optional.ofNullable(classesServiceClient.getClassesById(id).getBody())
+        return Optional.ofNullable(classGroupServiceClient.getClassesById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("Class not found"));
     }
 
     public GroupsDto getGroupById(String id) {
-        return Optional.ofNullable(groupsServiceClient.getGroupsById(id).getBody())
+        return Optional.ofNullable(classGroupServiceClient.getGroupsById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("Group not found"));
     }
 
@@ -112,5 +178,15 @@ public class ChatService {
     protected Chat findAdvertById(String id) {
         return chatRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advert not found"));
+    }
+    
+    public List<Chat> getFilteredChats(ChatFilterRequest filterRequest) {
+        Pageable pageable = PageRequest.of(filterRequest.getOffset(), filterRequest.getLimit());
+
+        return chatRepository.findByGroupIdOrClassId(
+            filterRequest.getGroupId(),
+            filterRequest.getClassId(),
+            pageable
+        );
     }
 }

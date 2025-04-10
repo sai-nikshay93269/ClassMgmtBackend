@@ -1,7 +1,13 @@
 package com.bitsclassmgmt.chatservice.service;
 
-import com.bitsclassmgmt.chatservice.client.ClassesServiceClient;
-import com.bitsclassmgmt.chatservice.client.GroupsServiceClient;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+
+import com.bitsclassmgmt.chatservice.client.ClassGroupServiceClient;
 import com.bitsclassmgmt.chatservice.dto.ClassesDto;
 import com.bitsclassmgmt.chatservice.dto.GroupsDto;
 import com.bitsclassmgmt.chatservice.dto.VoiceChannelDto;
@@ -11,11 +17,6 @@ import com.bitsclassmgmt.chatservice.repository.VoiceChannelRepository;
 import com.bitsclassmgmt.chatservice.request.chat.VoiceChannelCreateRequest;
 
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +24,7 @@ public class VoiceChannelService {
     
     private final VoiceChannelRepository voiceChannelRepository;
     private final ModelMapper modelMapper;
-    private final ClassesServiceClient classesServiceClient;
-    private final GroupsServiceClient groupsServiceClient;
+    private final ClassGroupServiceClient classGroupServiceClient;
 
     public VoiceChannelDto createVoiceChannel(VoiceChannelCreateRequest request) {
     	 // Validate class existence if provided
@@ -46,12 +46,12 @@ public class VoiceChannelService {
     }
     
     public ClassesDto getClassById(String id) {
-        return Optional.ofNullable(classesServiceClient.getClassesById(id).getBody())
+        return Optional.ofNullable(classGroupServiceClient.getClassesById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("Class not found"));
     }
 
     public GroupsDto getGroupById(String id) {
-        return Optional.ofNullable(groupsServiceClient.getGroupsById(id).getBody())
+        return Optional.ofNullable(classGroupServiceClient.getGroupsById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("Group not found"));
     }
 

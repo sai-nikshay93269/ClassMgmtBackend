@@ -7,11 +7,8 @@ spring:
 
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true  # Ensures service names are lowercase in Eureka
       globalcors:
+        add-to-simple-url-handler-mapping: true
         corsConfigurations:
           '[/**]':
             allowedOrigins:
@@ -24,6 +21,16 @@ spring:
               - OPTIONS
             allowedHeaders: "*"
             allowCredentials: true
+
       httpclient:
         connect-timeout: 60000  # 60 seconds connection timeout
         response-timeout: 60s  # 60 seconds response timeout
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive.socket: DEBUG
+    org.springframework.http.server.reactive: DEBUG
+    reactor.netty.http.client: DEBUG
+    reactor.netty.transport: DEBUG

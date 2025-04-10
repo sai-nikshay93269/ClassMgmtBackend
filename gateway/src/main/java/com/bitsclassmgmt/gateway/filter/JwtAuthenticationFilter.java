@@ -27,17 +27,28 @@ public class JwtAuthenticationFilter implements GatewayFilter {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
 
-        final List<String> apiEndpoints = List.of("/v1/auth/login", "/v1/auth/register", "/eureka");
+        final List<String> publicEndpoints = List.of(
+                "/v1/auth/login",
+                "/v1/auth/register",
+                "/eureka",
+                "/ws/**"  // <-- Add this to skip JWT for WebSocket
+        );
 
-        Predicate<ServerHttpRequest> isApiSecured = r -> apiEndpoints.stream()
-                .noneMatch(uri -> r.getURI().getPath().contains(uri));
+        Predicate<ServerHttpRequest> isSecured = r -> publicEndpoints.stream()
+                .noneMatch(uri -> r.getURI().getPath().startsWith(uri));
 
-        if (isApiSecured.test(request)) {
-            if (authMissing(request)) return onError(exchange);
+        // Skip filtering for WebSocket upgrade requests
+        boolean isWebSocket = "websocket".equalsIgnoreCase(request.getHeaders().getUpgrade());
 
-            String token = request.getHeaders().getOrEmpty("Authorization").get(0);
+        if (isSecured.test(request)) {
+            if (isWebSocketPath(request)) {
+                return chain.filter(exchange); // Skip WebSocket JWT
+            }
 
-            if (token != null && token.startsWith("Bearer ")) token = token.substring(7);
+            String token = extractToken(request);
+            if (token == null || token.isEmpty()) {
+                return onError(exchange);
+            }
 
             try {
                 jwtUtil.validateToken(token);
@@ -45,8 +56,31 @@ public class JwtAuthenticationFilter implements GatewayFilter {
                 return onError(exchange);
             }
         }
+
+
         return chain.filter(exchange);
     }
+
+    private boolean isWebSocketPath(ServerHttpRequest request) {
+        String path = request.getURI().getPath();
+        return path.startsWith("/ws/chat"); // Any WS endpoint you want to allow without JWT
+    }
+
+    
+    private String extractToken(ServerHttpRequest request) {
+        // 1. Try from Authorization header
+        List<String> authHeaders = request.getHeaders().getOrEmpty("Authorization");
+        if (!authHeaders.isEmpty()) {
+            String bearer = authHeaders.get(0);
+            if (bearer.startsWith("Bearer ")) {
+                return bearer.substring(7);
+            }
+        }
+
+        // 2. Try from query param (for WebSocket connections)
+        return request.getQueryParams().getFirst("token");
+    }
+
 
     private Mono<Void> onError(ServerWebExchange exchange) {
         ServerHttpResponse response = exchange.getResponse();

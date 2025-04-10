@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.bitsclassmgmt.gateway.filter.JwtAuthenticationFilter;
+import com.bitsclassmgmt.gateway.filter.LoggingGatewayFilter;
 
 @Configuration
 public class GatewayConfig {
@@ -18,17 +19,21 @@ public class GatewayConfig {
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route("user-service", r -> r.path("/v1/user/**")
-                        .filters(f -> f.filter(filter))
+
+               .route("user-service-asdasdsa", r -> r.path("/v1/user/**")
+                        .filters(f -> f.filter(filter).filter(new LoggingGatewayFilter()))
                         .uri("lb://user-service"))
 
-                .route("job-service", r -> r.path("/v1/classes-service/**")
+                .route("classes-service", r -> r.path("/v1/classes-service/**")
                         .filters(f -> f.filter(filter))
                         .uri("lb://classes-service"))
-                .route("job-service", r -> r.path("/v1/chat-service/**")
+
+                // Optional: fallback for chat-service REST endpoints
+                .route("chat-service", r -> r.path("/v1/chat-service/chat/**")
                         .filters(f -> f.filter(filter))
                         .uri("lb://chat-service"))
-                .route("notification-se rvice", r -> r.path("/v1/notification/**")
+
+                .route("notification-service", r -> r.path("/v1/notification/**")
                         .filters(f -> f.filter(filter))
                         .uri("lb://notification-service"))
 
@@ -38,6 +43,7 @@ public class GatewayConfig {
                 .route("file-storage", r -> r.path("/v1/file-storage/**")
                         .filters(f -> f.filter(filter))
                         .uri("lb://file-storage"))
+
                 .build();
     }
 }
