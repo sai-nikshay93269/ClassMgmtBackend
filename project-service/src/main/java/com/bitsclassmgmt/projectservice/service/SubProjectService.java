@@ -5,11 +5,9 @@ import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.bitsclassmgmt.projectservice.client.GroupsServiceClient;
+import com.bitsclassmgmt.projectservice.client.ClassGroupServiceClient;
 import com.bitsclassmgmt.projectservice.client.UserServiceClient;
-import com.bitsclassmgmt.projectservice.dto.ClassesDto;
 import com.bitsclassmgmt.projectservice.dto.GroupsDto;
 import com.bitsclassmgmt.projectservice.dto.UserDto;
 import com.bitsclassmgmt.projectservice.exc.NotFoundException;
@@ -17,8 +15,9 @@ import com.bitsclassmgmt.projectservice.model.Project;
 import com.bitsclassmgmt.projectservice.model.SubProject;
 import com.bitsclassmgmt.projectservice.repository.ProjectRepository;
 import com.bitsclassmgmt.projectservice.repository.SubProjectRepository;
-import com.bitsclassmgmt.projectservice.request.classes.ClassesUpdateRequest;
+import com.bitsclassmgmt.projectservice.request.project.ProjectUpdateRequest;
 import com.bitsclassmgmt.projectservice.request.project.SubProjectCreateRequest;
+import com.bitsclassmgmt.projectservice.request.project.SubProjectUpdateRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,7 +27,7 @@ public class SubProjectService {
     private final SubProjectRepository subProjectRepository;
     private final ProjectRepository projectRepository;
     private final UserServiceClient userServiceclient;
-    private final GroupsServiceClient groupServiceclient;
+    private final ClassGroupServiceClient classGroupServiceclient;
     private final ModelMapper modelMapper;
 
     public SubProject createSubProject(SubProjectCreateRequest request) {
@@ -38,14 +37,17 @@ public class SubProjectService {
                 .orElseThrow(() -> new RuntimeException("Project not found with ID: " + request.getProjectId()));
 
         // Fetch the group entity if provided (optional)
-        String groupId = getGroupById(request.getGroupId()).getId();
+        if (request.getGroupId() != null) {
+        	getGroupById(request.getGroupId());
+        }
 
         // Create and save the sub-project
         SubProject subProject = SubProject.builder()
                 .project(project) // Associate with the project
-                .groupId(groupId) // Associate with the group if applicable
+                .groupId(request.getGroupId()) // Associate with the group if applicable
                 .title(request.getTitle()) // Set sub-project title
                 .description(request.getDescription()) // Set description
+                .dueDate(request.getDueDate()) 
                 .build();
 
         return subProjectRepository.save(subProject);
@@ -68,17 +70,19 @@ public class SubProjectService {
     }
 
     public GroupsDto getGroupById(String id) {
-        return Optional.ofNullable(groupServiceclient.getGroupsById(id).getBody())
+        return Optional.ofNullable(classGroupServiceclient.getGroupsById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("Group not found"));
     }
     
-    public SubProject updateSubProjectById(ClassesUpdateRequest request) {
-    	SubProject toUpdate = findSubProjectById(request.getId());
-        modelMapper.map(request, toUpdate);
+    public SubProject updateSubProjectById(SubProjectUpdateRequest request) {
+    	SubProject existingSubProject = subProjectRepository.findById(request.getId())
+    		    .orElseThrow(() -> new NotFoundException("SubProject not found with ID: " + request.getId()));
 
+    		modelMapper.map(request, existingSubProject);
+    		return subProjectRepository.save(existingSubProject);
 
-        return subProjectRepository.save(toUpdate);
     }
+
 
     public void deleteSubProjectById(String id) {
     	subProjectRepository.deleteById(id);
@@ -88,5 +92,8 @@ public class SubProjectService {
     protected SubProject findSubProjectById(String id) {
         return subProjectRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Sub-Project not found"));
+    }
+    public List<SubProject> getSubProjectsByProjectId(String projectId) {
+        return subProjectRepository.findByProjectId(projectId);
     }
 }

@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import com.bitsclassmgmt.projectservice.client.ClassesServiceClient;
+import com.bitsclassmgmt.projectservice.client.ClassGroupServiceClient;
 import com.bitsclassmgmt.projectservice.client.FileMetadataClient;
 import com.bitsclassmgmt.projectservice.client.UserServiceClient;
 import com.bitsclassmgmt.projectservice.dto.ClassesDto;
@@ -18,7 +18,7 @@ import com.bitsclassmgmt.projectservice.model.TaskFile;
 import com.bitsclassmgmt.projectservice.repository.ProjectRepository;
 import com.bitsclassmgmt.projectservice.repository.TaskFileRepository;
 import com.bitsclassmgmt.projectservice.repository.TaskRepository;
-import com.bitsclassmgmt.projectservice.request.classes.ClassesUpdateRequest;
+import com.bitsclassmgmt.projectservice.request.project.ProjectUpdateRequest;
 import com.bitsclassmgmt.projectservice.request.project.TaskFileCreateRequest;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class TaskFileService {
     private final TaskRepository taskRepository;
     private final TaskFileRepository taskFileRepository;
     private final UserServiceClient userServiceclient;
-    private final ClassesServiceClient classesServiceclient;
+    private final ClassGroupServiceClient classGroupServiceclient;
     private final FileMetadataClient fileStorageClient;
     private final ModelMapper modelMapper;
 
@@ -54,6 +54,10 @@ public class TaskFileService {
     public List<TaskFile> getAll() {
         return taskFileRepository.findAll();
     }
+    public List<TaskFile> getByTaskId(String taskId) {
+        return taskFileRepository.findByTaskId(taskId);
+    }
+
 
     public TaskFile getAdvertById(String id) {
         return findTaskFileById(id);
@@ -67,7 +71,7 @@ public class TaskFileService {
     }
     
     public ClassesDto getClassById(String id) {
-        return Optional.ofNullable(classesServiceclient.getClassesById(id).getBody())
+        return Optional.ofNullable(classGroupServiceclient.getClassesById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
     
@@ -77,7 +81,7 @@ public class TaskFileService {
     }
 
 
-    public TaskFile updateTaskFileById(ClassesUpdateRequest request) {
+    public TaskFile updateTaskFileById(ProjectUpdateRequest request) {
     	TaskFile toUpdate = findTaskFileById(request.getId());
         modelMapper.map(request, toUpdate);
 

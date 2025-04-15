@@ -8,6 +8,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.ForeignKey;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 
 import com.bitsclassmgmt.projectservice.enums.TaskStatus;
@@ -18,7 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity(name = "projects")  
+@Entity(name = "tasks")  
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -40,7 +41,7 @@ public class Task extends BaseEntity {
     
     private String title;
 
-
+    @Column(columnDefinition = "TEXT")
     private String description;
     
 

@@ -5,17 +5,16 @@ import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.bitsclassmgmt.projectservice.client.ClassesServiceClient;
+import com.bitsclassmgmt.projectservice.client.ClassGroupServiceClient;
 import com.bitsclassmgmt.projectservice.client.UserServiceClient;
 import com.bitsclassmgmt.projectservice.dto.ClassesDto;
 import com.bitsclassmgmt.projectservice.dto.UserDto;
 import com.bitsclassmgmt.projectservice.exc.NotFoundException;
 import com.bitsclassmgmt.projectservice.model.Project;
 import com.bitsclassmgmt.projectservice.repository.ProjectRepository;
-import com.bitsclassmgmt.projectservice.request.classes.ClassesUpdateRequest;
-import com.bitsclassmgmt.projectservice.request.classes.ProjectCreateRequest;
+import com.bitsclassmgmt.projectservice.request.project.ProjectCreateRequest;
+import com.bitsclassmgmt.projectservice.request.project.ProjectUpdateRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserServiceClient userServiceclient;
-    private final ClassesServiceClient classServiceclient;
+    private final ClassGroupServiceClient classGroupServiceclient;
     private final ModelMapper modelMapper;
 
     public Project createProject(ProjectCreateRequest request) {
@@ -56,17 +55,27 @@ public class ProjectService {
     }
     
     public ClassesDto getClassById(String id) {
-        return Optional.ofNullable(classServiceclient.getClassesById(id).getBody())
+        return Optional.ofNullable(classGroupServiceclient.getClassesById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("Class not found"));
     }
 
-    public Project updateProjectById(ClassesUpdateRequest request) {
-        Project toUpdate = findProjectById(request.getId());
-        modelMapper.map(request, toUpdate);
+    public Project updateProjectById(ProjectUpdateRequest request) {
+        // Validate the ID
+        if (request.getId() == null) {
+            throw new IllegalArgumentException("Project ID must not be null");
+        }
 
+        // Fetch the project or throw NotFoundException
+        Project existingProject = projectRepository.findById(request.getId())
+            .orElseThrow(() -> new NotFoundException("Project not found with ID: " + request.getId()));
 
-        return projectRepository.save(toUpdate);
+        // Map non-null fields from request to existing entity
+        modelMapper.map(request, existingProject);
+
+        // Save and return updated project
+        return projectRepository.save(existingProject);
     }
+
 
     public void deleteProjectById(String id) {
     	projectRepository.deleteById(id);
@@ -76,5 +85,8 @@ public class ProjectService {
     protected Project findProjectById(String id) {
         return projectRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Project not found"));
+    }
+    public List<Project> getProjectsByClassId(String classId) {
+        return projectRepository.findByClassId(classId);
     }
 }

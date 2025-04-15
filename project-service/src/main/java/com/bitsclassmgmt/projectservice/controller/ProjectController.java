@@ -15,18 +15,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.bitsclassmgmt.projectservice.dto.ProjectDto;
 import com.bitsclassmgmt.projectservice.dto.SubProjectDto;
+import com.bitsclassmgmt.projectservice.dto.TaskDto;
+import com.bitsclassmgmt.projectservice.model.Project;
 import com.bitsclassmgmt.projectservice.model.SubProject;
-import com.bitsclassmgmt.projectservice.request.classes.ClassesUpdateRequest;
-import com.bitsclassmgmt.projectservice.request.classes.ProjectCreateRequest;
+import com.bitsclassmgmt.projectservice.model.Task;
+import com.bitsclassmgmt.projectservice.request.project.ProjectCreateRequest;
+import com.bitsclassmgmt.projectservice.request.project.ProjectUpdateRequest;
 import com.bitsclassmgmt.projectservice.request.project.SubProjectCreateRequest;
 import com.bitsclassmgmt.projectservice.service.ProjectService;
 import com.bitsclassmgmt.projectservice.service.SubProjectService;
+import com.bitsclassmgmt.projectservice.service.TaskService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,11 +39,21 @@ public class ProjectController {
     private final ProjectService projectService;
     private final SubProjectService subProjectService;
     private final ModelMapper modelMapper;
+    private final TaskService taskService;
 
     @PostMapping("/")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody  ProjectCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(modelMapper.map(projectService.createProject(request), ProjectDto.class));
+    }
+    
+    @GetMapping("/class/{classId}")
+    public ResponseEntity<List<ProjectDto>> getProjectsByClassId(@PathVariable String classId) {
+        List<Project> projects = projectService.getProjectsByClassId(classId);
+        List<ProjectDto> dtos = projects.stream()
+                .map(project -> modelMapper.map(project, ProjectDto.class))
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/getAll")
@@ -56,9 +68,11 @@ public class ProjectController {
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasRole('TEACHER') or @advertService.authorizeCheck(#request.id, principal)")
-    public ResponseEntity<ProjectDto> updateProjectsById(@Valid @RequestPart ClassesUpdateRequest request) {
-        return ResponseEntity.ok(modelMapper.map(projectService.updateProjectById(request), ProjectDto.class));
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<ProjectDto> updateProject(@Valid @RequestBody ProjectUpdateRequest request) {
+        Project updated = projectService.updateProjectById(request);
+        ProjectDto dto = modelMapper.map(updated, ProjectDto.class);
+        return ResponseEntity.ok(dto);
     }
 
     @DeleteMapping("/{id}")
@@ -87,5 +101,28 @@ public class ProjectController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
+    @GetMapping("/{projectId}/subprojects")
+    public ResponseEntity<List<SubProjectDto>> getSubProjectsByProjectId(@PathVariable String projectId) {
+        List<SubProject> subProjects = subProjectService.getSubProjectsByProjectId(projectId);
+        List<SubProjectDto> dtos = subProjects.stream()
+                .map(sub -> {
+                    SubProjectDto dto = modelMapper.map(sub, SubProjectDto.class);
+                    dto.setProjectId(sub.getProject().getId());
+                    if (sub.getGroupId() != null) {
+                        dto.setGroupId(sub.getGroupId());
+                    }
+                    return dto;
+                })
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
     
+    @GetMapping("/{projectId}/tasks")
+    public ResponseEntity<List<TaskDto>> getTasksByProjectId(@PathVariable String projectId) {
+        List<Task> tasks = taskService.getTasksByProjectId(projectId);
+        List<TaskDto> dtos = tasks.stream()
+                .map(task -> modelMapper.map(task, TaskDto.class))
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
 }

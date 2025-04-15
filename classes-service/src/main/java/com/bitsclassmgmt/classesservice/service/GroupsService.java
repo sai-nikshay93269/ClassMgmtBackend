@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.bitsclassmgmt.classesservice.client.UserServiceClient;
 import com.bitsclassmgmt.classesservice.dto.GroupsDto;
@@ -14,10 +13,11 @@ import com.bitsclassmgmt.classesservice.dto.UserDto;
 import com.bitsclassmgmt.classesservice.exc.NotFoundException;
 import com.bitsclassmgmt.classesservice.mapper.GroupsMapper;
 import com.bitsclassmgmt.classesservice.model.Classes;
+import com.bitsclassmgmt.classesservice.model.GroupMembers;
 import com.bitsclassmgmt.classesservice.model.Groups;
 import com.bitsclassmgmt.classesservice.repository.ClassesRepository;
+import com.bitsclassmgmt.classesservice.repository.GroupMembersRepository;
 import com.bitsclassmgmt.classesservice.repository.GroupsRepository;
-import com.bitsclassmgmt.classesservice.request.classes.ClassesCreateRequest;
 import com.bitsclassmgmt.classesservice.request.classes.ClassesUpdateRequest;
 import com.bitsclassmgmt.classesservice.request.classes.GroupsCreateRequest;
 
@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GroupsService {
     private final GroupsRepository groupsRepository;
+    private final GroupMembersRepository groupMembersRepository;
     private final ClassesRepository classesRepository;
     private final UserServiceClient userServiceclient;
     private final ModelMapper modelMapper;
@@ -53,6 +54,15 @@ public class GroupsService {
     public List<Groups> getAll() {
         return groupsRepository.findAll();
     }
+    
+    public List<GroupsDto> getGroupsForStudentInClass(String studentId, String classId) {
+        List<GroupMembers> memberships = groupMembersRepository.findByStudentIdAndGroupEntity_ClassEntity_Id(studentId, classId);
+        return memberships.stream()
+                .map(GroupMembers::getGroupEntity)
+                .map(group -> modelMapper.map(group, GroupsDto.class))
+                .collect(Collectors.toList());
+    }
+
 
     public Groups getGroupById(String id) {
         return findGroupById(id);

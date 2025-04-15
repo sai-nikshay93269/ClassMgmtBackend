@@ -8,4 +8,6 @@ import com.bitsclassmgmt.classesservice.model.ClassMembers;
 
 public interface ClassMembersRepository extends JpaRepository<ClassMembers, String> {
 	List<ClassMembers> findByClassEntityId(String classId);
+	List<ClassMembers> findByStudentId(String studentId);
+
 }

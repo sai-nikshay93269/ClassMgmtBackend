@@ -17,17 +17,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.bitsclassmgmt.projectservice.dto.EvaluationDto;
-import com.bitsclassmgmt.projectservice.dto.ProjectDto;
 import com.bitsclassmgmt.projectservice.dto.TaskDto;
 import com.bitsclassmgmt.projectservice.dto.TaskFileDto;
 import com.bitsclassmgmt.projectservice.model.Evaluation;
+import com.bitsclassmgmt.projectservice.model.Task;
 import com.bitsclassmgmt.projectservice.model.TaskFile;
-import com.bitsclassmgmt.projectservice.request.classes.ClassesUpdateRequest;
 import com.bitsclassmgmt.projectservice.request.project.EvaluationCreateRequest;
+import com.bitsclassmgmt.projectservice.request.project.ProjectUpdateRequest;
+import com.bitsclassmgmt.projectservice.request.project.TaskCreateRequest;
 import com.bitsclassmgmt.projectservice.request.project.TaskFileCreateRequest;
+import com.bitsclassmgmt.projectservice.request.project.TaskUpdateRequest;
 import com.bitsclassmgmt.projectservice.service.EvaluationService;
 import com.bitsclassmgmt.projectservice.service.ProjectService;
 import com.bitsclassmgmt.projectservice.service.SubProjectService;
@@ -47,6 +48,15 @@ public class TaskController {
     private final EvaluationService evaluationService;
     private final ModelMapper modelMapper;
 
+    @PostMapping("/")
+    public ResponseEntity<TaskDto> createTask(@Valid @RequestBody TaskCreateRequest request) {
+        // Ensure the task is associated with either a project or subproject
+
+
+        Task task = taskService.createTask(request);
+        TaskDto responseDto = modelMapper.map(task, TaskDto.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+    }
     
     @GetMapping("/getAll")
     public ResponseEntity<List<TaskDto>> getAllTask() {
@@ -61,9 +71,10 @@ public class TaskController {
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasRole('ADMIN') or @advertService.authorizeCheck(#request.id, principal)")
-    public ResponseEntity<TaskDto> updateTaskById(@Valid @RequestPart ClassesUpdateRequest request) {
-        return ResponseEntity.ok(modelMapper.map(taskService.updatTaskById(request), TaskDto.class));
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<Task> updateTaskById(@Valid @RequestBody TaskUpdateRequest request) {
+        Task updatedTask = taskService.updateTaskById(request);
+        return ResponseEntity.ok(updatedTask);
     }
 
     @DeleteMapping("/{id}")
@@ -87,11 +98,16 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
-    @GetMapping("/{id}/files")
-    public ResponseEntity<List<TaskFileDto>> getAllTaskFiles() {
-        return ResponseEntity.ok(taskFileService.getAll().stream()
-                .map(taskFile -> modelMapper.map(taskFile, TaskFileDto.class)).toList());
+    @GetMapping("/{taskId}/files")
+    public ResponseEntity<List<TaskFileDto>> getTaskFilesByTaskId(@PathVariable String taskId) {
+        List<TaskFile> taskFiles = taskFileService.getByTaskId(taskId);
+        List<TaskFileDto> fileDtos = taskFiles.stream()
+            .map(taskFile -> modelMapper.map(taskFile, TaskFileDto.class))
+            .toList();
+
+        return ResponseEntity.ok(fileDtos);
     }
+
     @DeleteMapping("/files/{id}")
     public ResponseEntity<Void> deleteTaskFileById(@PathVariable String id) {
     	taskFileService.deleteTaskFileById(id);
@@ -116,10 +132,14 @@ public class TaskController {
     }
 
 
-    @GetMapping("/{id}/evaluations")
-    public ResponseEntity<List<EvaluationDto>> getAllEvaluationsByTaskID() {
-        return ResponseEntity.ok(evaluationService.getAll().stream()
-                .map(evaluation -> modelMapper.map(evaluation, EvaluationDto.class)).toList());
+    @GetMapping("/{taskId}/evaluations")
+    public ResponseEntity<List<EvaluationDto>> getAllEvaluationsByTaskId(@PathVariable String taskId) {
+        List<Evaluation> evaluations = evaluationService.getByTaskId(taskId);
+        List<EvaluationDto> evaluationDtos = evaluations.stream()
+                .map(evaluation -> modelMapper.map(evaluation, EvaluationDto.class))
+                .toList();
+        return ResponseEntity.ok(evaluationDtos);
     }
+
     
 }

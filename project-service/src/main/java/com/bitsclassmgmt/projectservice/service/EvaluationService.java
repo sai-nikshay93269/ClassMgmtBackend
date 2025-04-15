@@ -7,19 +7,18 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.bitsclassmgmt.projectservice.client.ClassesServiceClient;
+import com.bitsclassmgmt.projectservice.client.ClassGroupServiceClient;
 import com.bitsclassmgmt.projectservice.client.UserServiceClient;
 import com.bitsclassmgmt.projectservice.dto.ClassesDto;
 import com.bitsclassmgmt.projectservice.dto.UserDto;
 import com.bitsclassmgmt.projectservice.exc.NotFoundException;
 import com.bitsclassmgmt.projectservice.model.Evaluation;
-import com.bitsclassmgmt.projectservice.model.Project;
 import com.bitsclassmgmt.projectservice.model.Task;
 import com.bitsclassmgmt.projectservice.repository.EvaluationRepository;
 import com.bitsclassmgmt.projectservice.repository.TaskFileRepository;
 import com.bitsclassmgmt.projectservice.repository.TaskRepository;
-import com.bitsclassmgmt.projectservice.request.classes.ClassesUpdateRequest;
 import com.bitsclassmgmt.projectservice.request.project.EvaluationCreateRequest;
+import com.bitsclassmgmt.projectservice.request.project.ProjectUpdateRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,7 +29,7 @@ public class EvaluationService {
     private final TaskRepository taskRepository;
     private final TaskFileRepository taskFileRepository;
     private final UserServiceClient userServiceclient;
-    private final ClassesServiceClient classesServiceclient;
+    private final ClassGroupServiceClient classGroupServiceclient;
     private final ModelMapper modelMapper;
 
     public Evaluation createEvaluation(EvaluationCreateRequest request) {
@@ -56,6 +55,11 @@ public class EvaluationService {
     public List<Evaluation> getAll() {
         return evaluationRepository.findAll();
     }
+    
+    public List<Evaluation> getByTaskId(String taskId) {
+        return evaluationRepository.findByTaskId(taskId);
+    }
+
 
     public Evaluation getAdvertById(String id) {
         return findAdvertById(id);
@@ -69,12 +73,12 @@ public class EvaluationService {
     }
     
     public ClassesDto getClassById(String id) {
-        return Optional.ofNullable(classesServiceclient.getClassesById(id).getBody())
+        return Optional.ofNullable(classGroupServiceclient.getClassesById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
 
-    public Evaluation updateAdvertById(ClassesUpdateRequest request, MultipartFile file) {
+    public Evaluation updateAdvertById(ProjectUpdateRequest request, MultipartFile file) {
     	Evaluation toUpdate = findAdvertById(request.getId());
         modelMapper.map(request, toUpdate);
 

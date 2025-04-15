@@ -21,6 +21,7 @@ public class Classes extends BaseEntity {
     @Column(unique = true, nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @OneToMany(mappedBy = "classEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -1,5 +1,7 @@
 package com.bitsclassmgmt.projectservice.dto;
 
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Data;
@@ -11,4 +13,5 @@ public class ClassesDto {
     private String name;
     private String description;
     private String teacherId;
+    private Set<ClassMembersDto> members;
 }

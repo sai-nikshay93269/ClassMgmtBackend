@@ -2,17 +2,19 @@ package com.bitsclassmgmt.classesservice.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.bitsclassmgmt.classesservice.client.UserServiceClient;
 import com.bitsclassmgmt.classesservice.dto.ClassesDto;
 import com.bitsclassmgmt.classesservice.dto.UserDto;
 import com.bitsclassmgmt.classesservice.exc.NotFoundException;
 import com.bitsclassmgmt.classesservice.mapper.ClassesMapper;
+import com.bitsclassmgmt.classesservice.model.ClassMembers;
 import com.bitsclassmgmt.classesservice.model.Classes;
+import com.bitsclassmgmt.classesservice.repository.ClassMembersRepository;
 import com.bitsclassmgmt.classesservice.repository.ClassesRepository;
 import com.bitsclassmgmt.classesservice.request.classes.ClassesCreateRequest;
 import com.bitsclassmgmt.classesservice.request.classes.ClassesUpdateRequest;
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ClassesService {
     private final ClassesRepository classesRepository;
+    private final ClassMembersRepository classMembersRepository;
     private final UserServiceClient userServiceclient;
     private final ModelMapper modelMapper;
 
@@ -47,6 +50,15 @@ public class ClassesService {
         List<Classes> classesList = classesRepository.findAll();
         return ClassesMapper.toDtoList(classesList);
     }
+    
+    public List<ClassesDto> getClassesForStudent(String studentId) {
+        List<ClassMembers> memberships = classMembersRepository.findByStudentId(studentId);
+        return memberships.stream()
+                .map(ClassMembers::getClassEntity)
+                .map(c -> modelMapper.map(c, ClassesDto.class))
+                .collect(Collectors.toList());
+    }
+
 
     public Classes getClassById(String id) {
         return findClassById(id);

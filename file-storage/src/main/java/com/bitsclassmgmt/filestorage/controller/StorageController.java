@@ -4,6 +4,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,10 +53,11 @@ public class StorageController {
         FileResourceDto fileResource = storageService.downloadFile(id);
 
         return ResponseEntity.ok()
-        		.contentType(MediaType.parseMediaType(fileResource.getContentType().getMimeType()))
+                .contentType(MediaTypeFactory.getMediaType(fileResource.getFileName()).orElse(MediaType.APPLICATION_OCTET_STREAM))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResource.getFileName() + "\"")
                 .body(fileResource.getResource());
     }
+
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteFile(@PathVariable String id) {

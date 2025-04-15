@@ -32,6 +32,11 @@ public class GatewayConfig {
                 .route("chat-service", r -> r.path("/v1/chat-service/chat/**")
                         .filters(f -> f.filter(filter))
                         .uri("lb://chat-service"))
+                
+                .route("project-service", r -> r.path("/v1/project-service/**")
+                        .filters(f -> f.filter(filter))
+                        .uri("lb://project-service"))
+
 
                 .route("notification-service", r -> r.path("/v1/notification/**")
                         .filters(f -> f.filter(filter))

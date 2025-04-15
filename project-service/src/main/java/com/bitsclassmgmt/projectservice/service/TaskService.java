@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import com.bitsclassmgmt.projectservice.client.ClassesServiceClient;
+import com.bitsclassmgmt.projectservice.client.ClassGroupServiceClient;
 import com.bitsclassmgmt.projectservice.client.UserServiceClient;
 import com.bitsclassmgmt.projectservice.dto.ClassesDto;
 import com.bitsclassmgmt.projectservice.dto.UserDto;
@@ -18,8 +18,9 @@ import com.bitsclassmgmt.projectservice.model.Task;
 import com.bitsclassmgmt.projectservice.repository.ProjectRepository;
 import com.bitsclassmgmt.projectservice.repository.SubProjectRepository;
 import com.bitsclassmgmt.projectservice.repository.TaskRepository;
-import com.bitsclassmgmt.projectservice.request.classes.ClassesUpdateRequest;
+import com.bitsclassmgmt.projectservice.request.project.ProjectUpdateRequest;
 import com.bitsclassmgmt.projectservice.request.project.TaskCreateRequest;
+import com.bitsclassmgmt.projectservice.request.project.TaskUpdateRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,11 +31,14 @@ public class TaskService {
     private final SubProjectRepository subProjectRepository;
     private final TaskRepository taskRepository;
     private final UserServiceClient userServiceclient;
-    private final ClassesServiceClient classesServiceclient;
+    private final ClassGroupServiceClient classGroupServiceclient;   
     private final ModelMapper modelMapper;
 
     public Task createTask(TaskCreateRequest request) {
         // Fetch the project entity using projectId
+        if (request.getProjectId() == null && request.getSubProjectId() == null) {
+            throw new RuntimeException("Project ID or SubProject ID is required");
+        }
         Project projectEntity = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with ID: " + request.getProjectId()));
 
@@ -55,7 +59,7 @@ public class TaskService {
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .dueDate(request.getDueDate())
-                .status(TaskStatus.PENDING) // Default status
+                .status(TaskStatus.OPEN) // Default status
                 .build();
 
         return taskRepository.save(toSave);
@@ -78,19 +82,24 @@ public class TaskService {
     }
     
     public ClassesDto getClassById(String id) {
-        return Optional.ofNullable(classesServiceclient.getClassesById(id).getBody())
+        return Optional.ofNullable(classGroupServiceclient.getClassesById(id).getBody())
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
 
-    public Task updatTaskById(ClassesUpdateRequest request) {
-    	Task toUpdate = findTaskById(request.getId());
-        modelMapper.map(request, toUpdate);
+    public Task updateTaskById(TaskUpdateRequest request) {
+        Task existingTask = taskRepository.findById(request.getId())
+                .orElseThrow(() -> new NotFoundException("Task not found with ID: " + request.getId()));
 
+        // Map fields from the request to the existing task
+        existingTask.setTitle(request.getTitle());
+        existingTask.setDescription(request.getDescription());
+        existingTask.setAssignedTo(request.getAssignedTo());
+        existingTask.setDueDate(request.getDueDate());
+        existingTask.setStatus(TaskStatus.valueOf(request.getStatus()));
 
-        return taskRepository.save(toUpdate);
+        return taskRepository.save(existingTask);
     }
-
     public void deleteTaskById(String id) {
     	taskRepository.deleteById(id);
     }
@@ -98,5 +107,11 @@ public class TaskService {
     protected Task findTaskById(String id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Task not found"));
+    }
+    public List<Task> getTasksByProjectId(String projectId) {
+        return taskRepository.findByProjectId(projectId); // Assuming the repository method is defined
+    }
+    public List<Task> getTasksBySubProjectId(String subProjectId) {
+        return taskRepository.findBySubProjectId(subProjectId); // Assuming the repository method is defined
     }
 }

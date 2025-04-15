@@ -15,15 +15,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.bitsclassmgmt.projectservice.dto.ProjectDto;
 import com.bitsclassmgmt.projectservice.dto.SubProjectDto;
 import com.bitsclassmgmt.projectservice.dto.TaskDto;
+import com.bitsclassmgmt.projectservice.model.SubProject;
 import com.bitsclassmgmt.projectservice.model.Task;
-import com.bitsclassmgmt.projectservice.request.classes.ClassesUpdateRequest;
+import com.bitsclassmgmt.projectservice.request.project.SubProjectUpdateRequest;
 import com.bitsclassmgmt.projectservice.request.project.TaskCreateRequest;
 import com.bitsclassmgmt.projectservice.service.ProjectService;
 import com.bitsclassmgmt.projectservice.service.SubProjectService;
@@ -54,10 +52,13 @@ public class SubProjectController {
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasRole('ADMIN') or @advertService.authorizeCheck(#request.id, principal)")
-    public ResponseEntity<ProjectDto> updateSubProjectById(@Valid @RequestPart ClassesUpdateRequest request) {
-        return ResponseEntity.ok(modelMapper.map(subProjectService.updateSubProjectById(request), ProjectDto.class));
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<SubProjectDto> updateSubProjectById(@Valid @RequestBody SubProjectUpdateRequest request) {
+        SubProject updated = subProjectService.updateSubProjectById(request);
+        SubProjectDto dto = modelMapper.map(updated, SubProjectDto.class);
+        return ResponseEntity.ok(dto);
     }
+
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @advertService.authorizeCheck(#id, principal)")
@@ -80,10 +81,12 @@ public class SubProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
-    @GetMapping("/{id}/tasks")
-    public ResponseEntity<List<ProjectDto>> getAllTasksbySubProject() {
-        return ResponseEntity.ok(subProjectService.getAll().stream()
-                .map(advert -> modelMapper.map(advert, ProjectDto.class)).toList());
+    @GetMapping("/{subProjectId}/tasks")
+    public ResponseEntity<List<TaskDto>> getTasksByProjectId(@PathVariable String subProjectId) {
+        List<Task> tasks = taskService.getTasksBySubProjectId(subProjectId);
+        List<TaskDto> dtos = tasks.stream()
+                .map(task -> modelMapper.map(task, TaskDto.class))
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
-    
 }

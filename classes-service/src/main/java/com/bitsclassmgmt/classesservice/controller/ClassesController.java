@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bitsclassmgmt.classesservice.dto.ClassMembersDto;
 import com.bitsclassmgmt.classesservice.dto.ClassesDto;
 import com.bitsclassmgmt.classesservice.dto.GroupsDto;
+import com.bitsclassmgmt.classesservice.jwt.AuthUtil;
 import com.bitsclassmgmt.classesservice.model.ClassMembers;
 import com.bitsclassmgmt.classesservice.model.Groups;
 import com.bitsclassmgmt.classesservice.request.classes.ClassMembersCreateRequest;
@@ -58,6 +59,25 @@ public class ClassesController {
     public ResponseEntity<List<ClassesDto>> getAllClasses() {
         return ResponseEntity.ok(classesService.getAll());
     }
+    
+    @GetMapping("/my-classes")
+    public ResponseEntity<List<ClassesDto>> getClassesForCurrentUser() {
+        String userId = AuthUtil.getCurrentUserId();
+        String role = AuthUtil.getCurrentUserRole();
+        System.out.println(userId);
+        System.out.println(role);
+        List<ClassesDto> result;
+
+        if ("ROLE_TEACHER".equals(role)) {
+            result = classesService.getAll(); // all classes for teachers
+        } else {
+        	System.out.println(userId);
+            result = classesService.getClassesForStudent(userId); // filtered
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
     
     @GetMapping("/{id}")
     public ResponseEntity<ClassesDto> getClassesById(@PathVariable String id) {
@@ -121,6 +141,22 @@ public class ClassesController {
         List<GroupsDto> responseDtoList = groupsService.getGroupsByClassId(classId);
 
         return ResponseEntity.ok(responseDtoList);
+    }
+
+    @GetMapping("/{classId}/my-groups")
+    public ResponseEntity<List<GroupsDto>> getGroupsForClassAndUser(@PathVariable String classId) {
+        String userId = AuthUtil.getCurrentUserId();
+        String role = AuthUtil.getCurrentUserRole();
+
+        List<GroupsDto> result;
+
+        if ("ROLE_TEACHER".equals(role)) {
+            result = groupsService.getGroupsByClassId(classId);
+        } else {
+            result = groupsService.getGroupsForStudentInClass(userId, classId);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     

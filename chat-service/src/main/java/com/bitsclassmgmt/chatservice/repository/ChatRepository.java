@@ -15,7 +15,7 @@ public interface ChatRepository extends JpaRepository<Chat, String> {
 	@Query("SELECT c FROM chats c " +
 		       "WHERE (:groupId IS NULL OR c.groupId = :groupId) " +
 		       "AND (:classId IS NULL OR c.classId = :classId) " +
-		       "ORDER BY c.timestamp DESC")
+		       "ORDER BY c.timestamp ASC")
 		List<Chat> findByGroupIdOrClassId(@Param("groupId") String groupId,
 		                                  @Param("classId") String classId,
 		                                  Pageable pageable);

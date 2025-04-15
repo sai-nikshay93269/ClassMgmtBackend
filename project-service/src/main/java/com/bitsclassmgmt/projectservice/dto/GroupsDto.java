@@ -1,5 +1,7 @@
 package com.bitsclassmgmt.projectservice.dto;
 
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Data;
@@ -9,5 +11,6 @@ import lombok.Data;
 public class GroupsDto {
     private String id;
     private String name;
-    private String classId; 
+    private String classId;
+    private Set<GroupMembersDto> groupMembers;
 }

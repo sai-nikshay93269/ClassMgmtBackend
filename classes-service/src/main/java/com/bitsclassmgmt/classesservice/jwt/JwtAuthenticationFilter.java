@@ -31,19 +31,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = request.getHeader("Authorization");
 
             if (StringUtils.hasText(token) && token.startsWith("Bearer ")) {
-                Claims claims = jwtUtil.getClaims(token.substring(7));
+                Claims claims = jwtUtil.getClaims(token.substring(7)); // Extract the token (remove "Bearer ")
 
+                // You can extract the userId from claims if needed:
+                String userId = claims.get("userId", String.class);
+
+                // Create the authorities (roles) from the claims (assuming issuer is the role)
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority(claims.getIssuer());
+                
+                // Set up the authentication object
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         claims.getSubject(), null, Collections.singleton(authority));
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
+                // Store the claims as the details (instead of WebAuthenticationDetails)
+                authentication.setDetails(claims);  // Store the claims as the authentication details
+
+                // Store authentication in SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                // Optionally, you can log or use the `userId` as required
+                // System.out.println("User ID from token: " + userId);
             }
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            // Log or handle the exception in a proper way
+            System.out.println("JWT authentication failed: " + e.getMessage());
         }
+
+        // Proceed with the filter chain (let the request continue)
         filterChain.doFilter(request, response);
     }
 }

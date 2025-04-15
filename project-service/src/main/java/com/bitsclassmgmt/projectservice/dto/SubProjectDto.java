@@ -12,4 +12,5 @@ public class SubProjectDto {
     private String groupId; // Added for optional group linkage
     private String title;
     private LocalDateTime dueDate;
+    private String description;
 }

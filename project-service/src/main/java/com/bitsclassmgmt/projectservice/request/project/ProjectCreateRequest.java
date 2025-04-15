@@ -1,4 +1,4 @@
-package com.bitsclassmgmt.projectservice.request.classes;
+package com.bitsclassmgmt.projectservice.request.project;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
