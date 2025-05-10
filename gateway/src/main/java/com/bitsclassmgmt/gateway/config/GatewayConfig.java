@@ -21,7 +21,7 @@ public class GatewayConfig {
         return builder.routes()
 
                .route("user-service-asdasdsa", r -> r.path("/v1/user/**")
-                        .filters(f -> f.filter(filter).filter(new LoggingGatewayFilter()))
+                        .filters(f -> f.filter(filter))
                         .uri("lb://user-service"))
 
                 .route("classes-service", r -> r.path("/v1/classes-service/**")
@@ -48,6 +48,10 @@ public class GatewayConfig {
                 .route("file-storage", r -> r.path("/v1/file-storage/**")
                         .filters(f -> f.filter(filter))
                         .uri("lb://file-storage"))
+                
+                .route("notification-service", r -> r.path("/v1/notification/**")
+                        .filters(f -> f.filter(filter))
+                        .uri("lb://notification-service"))
 
                 .build();
     }

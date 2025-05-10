@@ -22,7 +22,7 @@ public class Notification {
     private String id;
 
     private String userId;
-    private String offerId;
+    private String classId;
     private String message;
 
     @CreationTimestamp

@@ -1,12 +1,18 @@
 package com.bitsclassmgmt.notificationservice.request;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Getter
-@Builder
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
 public class SendNotificationRequest {
     private String userId;
-    private String offerId;
+    private String classId;
     private String message;
 }

@@ -19,7 +19,7 @@ public class NotificationService {
         var notification = Notification.builder()
                 .id(UUID.randomUUID().toString())
                 .userId(request.getUserId())
-                .offerId(request.getOfferId())
+                .classId(request.getClassId())
                 .message(request.getMessage())
                 .build();
         notificationRepository.save(notification);

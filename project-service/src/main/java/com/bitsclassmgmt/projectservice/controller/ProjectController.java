@@ -42,6 +42,7 @@ public class ProjectController {
     private final TaskService taskService;
 
     @PostMapping("/")
+    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody  ProjectCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(modelMapper.map(projectService.createProject(request), ProjectDto.class));

@@ -50,6 +50,7 @@ public class ClassesController {
     private final Validator validator;
 
     @PostMapping("")
+    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<ClassesDto> createClasses(@Valid @RequestBody  ClassesCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(modelMapper.map(classesService.createClasses(request), ClassesDto.class));
@@ -85,7 +86,7 @@ public class ClassesController {
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasRole('ADMIN') or @classesService.authorizeCheck(#request.id, principal)")
+    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<ClassesDto> updateClassesById(@Valid @RequestPart ClassesUpdateRequest request) {
         return ResponseEntity.ok(modelMapper.map(classesService.updateClassById(request), ClassesDto.class));
     }
@@ -98,6 +99,7 @@ public class ClassesController {
     }
     
     @PostMapping("/{id}/members")
+    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<List<ClassMembersDto>> createClassMembers(
             @PathVariable("id") String classId,
             @RequestBody ClassMembersCreateRequest request) {

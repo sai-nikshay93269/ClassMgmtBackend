@@ -30,11 +30,17 @@ public class UserController {
     }
 
     @GetMapping("/getAll")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDto>> getAll() {
         return ResponseEntity.ok(userService.getAll().stream()
                 .map(user -> modelMapper.map(user, UserDto.class)).toList());
     }
+    
+    @GetMapping("/getAllUsers")
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAll().stream()
+                .map(user -> modelMapper.map(user, UserDto.class)).toList());
+    }
+
 
     @GetMapping("/getUserById/{id}")
     public ResponseEntity<UserDto> getUserById(@PathVariable String id) {

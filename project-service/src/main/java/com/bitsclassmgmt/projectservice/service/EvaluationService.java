@@ -3,7 +3,9 @@ package com.bitsclassmgmt.projectservice.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.kafka.clients.admin.NewTopic;
 import org.modelmapper.ModelMapper;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,6 +19,7 @@ import com.bitsclassmgmt.projectservice.model.Task;
 import com.bitsclassmgmt.projectservice.repository.EvaluationRepository;
 import com.bitsclassmgmt.projectservice.repository.TaskFileRepository;
 import com.bitsclassmgmt.projectservice.repository.TaskRepository;
+import com.bitsclassmgmt.projectservice.request.notification.SendNotificationRequest;
 import com.bitsclassmgmt.projectservice.request.project.EvaluationCreateRequest;
 import com.bitsclassmgmt.projectservice.request.project.ProjectUpdateRequest;
 
@@ -31,25 +34,47 @@ public class EvaluationService {
     private final UserServiceClient userServiceclient;
     private final ClassGroupServiceClient classGroupServiceclient;
     private final ModelMapper modelMapper;
+    private final KafkaTemplate<String, SendNotificationRequest> kafkaTemplate;
+    private final NewTopic topic;
 
     public Evaluation createEvaluation(EvaluationCreateRequest request) {
-        // Fetch the task entity using taskId
         Task taskEntity = taskRepository.findById(request.getTaskId())
                 .orElseThrow(() -> new RuntimeException("Task not found with ID: " + request.getTaskId()));
 
-        // Fetch evaluator user (e.g., teacher or admin)
         String evaluatorId = getUserById(request.getEvaluatorId()).getId();
 
-        // Create and save the Evaluation entry
         Evaluation evaluation = Evaluation.builder()
-                .task(taskEntity) // Now storing Task entity instead of just taskId
+                .task(taskEntity)
                 .evaluatorId(evaluatorId)
-                .score(request.getScore()) // Score is required
-                .comments(request.getComments()) // Optional feedback
-                .fileId(request.getFileId()) // Optional file reference
+                .score(request.getScore())
+                .comments(request.getComments())
+                .fileId(request.getFileId())
                 .build();
 
-        return evaluationRepository.save(evaluation);
+        Evaluation saved = evaluationRepository.save(evaluation);
+
+        String message = String.format(
+                "📋 *Task Evaluated*\n\n" +
+                "🔹 Task: *%s* (ID: `%s`)\n" +
+                "📚 Class ID: `%s`\n" +
+                "✅ Score: *%d*\n" +
+                "📝 Comments: %s",
+                taskEntity.getTitle(),
+                taskEntity.getId(),
+                taskEntity.getProject().getClassId(),
+                request.getScore(),
+                request.getComments() == null ? "No comments." : request.getComments()
+        );
+
+        SendNotificationRequest notification = SendNotificationRequest.builder()
+                .userId(taskEntity.getAssignedTo())
+                .classId(taskEntity.getProject().getClassId())
+                .message(message)
+                .build();
+
+        kafkaTemplate.send(topic.name(), notification);
+
+        return saved;
     }
 
     public List<Evaluation> getAll() {

@@ -54,6 +54,7 @@ public class GroupsController {
     private final Validator validator;
 
     @PostMapping("")
+    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<GroupsDto> createGroups(@Valid @RequestBody  GroupsCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(modelMapper.map(groupsService.createGroups(request), GroupsDto.class));
@@ -87,6 +88,7 @@ public class GroupsController {
     }
     
     @PostMapping("/{id}/members")
+    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<List<GroupMembersDto>> createGroupMembers(
             @PathVariable("id") String groupId,
             @RequestBody GroupMembersCreateRequest request) {

@@ -7,6 +7,6 @@ import lombok.Data;
 @Builder
 public class SendNotificationRequest {
     private String userId;
-    private String offerId;
+    private String classId;
     private String message;
 }

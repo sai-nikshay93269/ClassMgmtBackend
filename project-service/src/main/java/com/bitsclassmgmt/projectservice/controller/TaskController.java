@@ -49,6 +49,7 @@ public class TaskController {
     private final ModelMapper modelMapper;
 
     @PostMapping("/")
+    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<TaskDto> createTask(@Valid @RequestBody TaskCreateRequest request) {
         // Ensure the task is associated with either a project or subproject
 
@@ -71,7 +72,6 @@ public class TaskController {
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<Task> updateTaskById(@Valid @RequestBody TaskUpdateRequest request) {
         Task updatedTask = taskService.updateTaskById(request);
         return ResponseEntity.ok(updatedTask);
